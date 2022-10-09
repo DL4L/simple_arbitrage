@@ -1,0 +1,14 @@
+[flake8]
+ignore = E128,W291,E402,E231
+max-line-length = 170
+max-complexity = 10
+exclude =
+    .git,
+    __pycache__,
+    run,
+    venv
+extend-ignore =
+    E203,
+    W503,
+filename_check1 = filter_regex=test_.+
+                  filename_regex=test_[\w-]+$
