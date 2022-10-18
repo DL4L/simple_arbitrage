@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 import sympy
+from flashbots import Flashbots
 from web3 import Web3, middleware
 from web3.contract import Contract
 from web3.gas_strategies.time_based import construct_time_based_gas_price_strategy
@@ -56,7 +57,7 @@ TEST_VOLUMES = [
 class Arbitrage:
     def __init__(self, executor_wallet, flashbots_provider, bundle_executor_contract):
         self.executor_wallet = executor_wallet
-        self.flashbots_provider = flashbots_provider
+        self.flashbots_provider: Flashbots = flashbots_provider
         self.bundle_executor_contract: Contract = bundle_executor_contract
         w3 = Web3()
         gas_price_stragegy = construct_time_based_gas_price_strategy(1)
@@ -71,6 +72,7 @@ class Arbitrage:
     ):
 
         for best_crossed_market in best_crossed_markets:
+            logging.info(f"Best Crossed Market: {best_crossed_market}\n")
             logging.info(
                 f"Send this much WETH {best_crossed_market.volume}, get this much profit {best_crossed_market.profit}"
             )
@@ -98,7 +100,7 @@ class Arbitrage:
             miner_reward = (best_crossed_market.profit * miner_reward_percentage) / 100
 
             transaction = self.bundle_executor_contract.functions.uniswapWeth(
-                best_crossed_market.volume, miner_reward, targets, payloads
+                int(best_crossed_market.volume), int(miner_reward), targets, payloads
             )
 
             try:
@@ -122,9 +124,9 @@ class Arbitrage:
                 }
             ]
             logger.info(f"Bundled transactions: {bundled_transactions}")
-            signed_bundle = self.flashbots_provider.signBundlde(bundled_transactions)
+            signed_bundle = self.flashbots_provider.sign_bundle(bundled_transactions)
             simulation = self.flashbots_provider.simulate(
-                signed_bundle, block_number + 1
+                bundled_transactions, block_number + 1
             )
 
             if "error" in simulation or simulation["firstRevert"] is not None:
@@ -164,7 +166,7 @@ def evaluate_markets(
                         (priced_market["eth_market"], pm["eth_market"]),
                     )
 
-        print(f"crossed markets len: {len(crossed_markets)}")
+        logger.info(f"crossed markets len: {len(crossed_markets)}")
         best_crossed_market: Optional[CrossedMarketDetails] = get_best_crossed_market(
             crossed_markets,
             token_address,
@@ -174,53 +176,6 @@ def evaluate_markets(
 
     best_crossed_markets.sort(key=lambda x: x.profit, reverse=True)
     return best_crossed_markets
-
-
-def _get_profit_from_input_size(
-    buy_from_market: EthMarket,
-    sell_to_market: EthMarket,
-    token_address: str,
-    size: float,
-) -> float:
-    tokens_out_from_buying_size = buy_from_market.get_tokens_out(
-        WETH_ADDRESS,
-        token_address,
-        size,
-    )
-    proceeds_from_selling_tokens = sell_to_market.get_tokens_out(
-        token_address,
-        WETH_ADDRESS,
-        tokens_out_from_buying_size,
-    )
-    profit = proceeds_from_selling_tokens - size
-    return profit
-
-
-def _binary_search_best_size_input(
-    low: float,
-    high: float,
-    buy_from_market: EthMarket,
-    sell_to_market: EthMarket,
-    token_address: str,
-    top_profit: float,
-) -> tuple[float, float]:
-    """returns best profit and input size"""
-    while high - low > 100:
-        mid_size = (low + high) / 2
-        try_profit = _get_profit_from_input_size(
-            buy_from_market,
-            sell_to_market,
-            token_address,
-            mid_size,
-        )
-        print(top_profit - try_profit)
-        if try_profit > top_profit:
-            low = mid_size
-            top_profit = try_profit
-        else:
-            high = mid_size
-
-    return top_profit, low
 
 
 def _calc_optimal_size_and_profit(

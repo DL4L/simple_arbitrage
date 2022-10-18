@@ -1,3 +1,4 @@
+import logging
 from collections import defaultdict
 from collections.abc import Iterable
 from itertools import chain
@@ -15,6 +16,8 @@ from simple_arbitrage.utils.addresses import (
     WETH_ADDRESS,
 )
 from simple_arbitrage.utils.util import ETHER
+
+logger = logging.getLogger(__name__)
 
 # batch count limit helpful for testing, loading entire set of uniswap markets takes a long time to load
 BATCH_COUNT_LIMIT = 100
@@ -42,7 +45,7 @@ def _get_uniswappy_markets(
             i,
             i + UNISWAP_BATCH_SIZE,
         )
-        print(f"batch: {len(pairs)}")
+        logger.info(f"batch: {len(pairs)}")
         for token1, token2, market_address in pairs:
 
             if token1 == WETH_ADDRESS:
@@ -62,7 +65,7 @@ def _get_uniswappy_markets(
 
         if len(pairs) < UNISWAP_BATCH_SIZE:
             break
-    print(f"pairs from exchange: {len(market_pairs)}")
+    logger.info(f"pairs from exchange: {len(market_pairs)}")
     return market_pairs
 
 
@@ -83,7 +86,7 @@ def _get_markets_by_token_filtered_min_weth_balance(
     pairs: Iterable[UniswappyV2EthPair],
 ) -> dict[str, list[UniswappyV2EthPair]]:
     filtered_pairs = [pair for pair in pairs if pair.get_balance(WETH_ADDRESS) >= ETHER]
-    print(f"len filtered pairs: {len(filtered_pairs)}")
+    logger.info(f"len filtered pairs: {len(filtered_pairs)}")
     markets_by_token = _group_markets_by_token(filtered_pairs)
     return markets_by_token
 
@@ -98,12 +101,12 @@ def update_reserves(
         abi=UNISWAP_QUERY_ABI,
     )
     pair_addresses = [pair.market_address for pair in all_market_pairs]
-    print(f"Updating markets, count {len(pair_addresses)}")
+    logger.info(f"Updating markets, count {len(pair_addresses)}")
 
     reserves: list[list[float]] = uniswap_query.caller.getReservesByPairs(
         pair_addresses,
     )
-    print(reserves[:5])
+
     for index, pair in enumerate(all_market_pairs):
         reserve = reserves[index]
         pair.set_reserves_via_ordered_balances([reserve[0], reserve[1]])
@@ -134,5 +137,5 @@ def get_uniswap_markets_by_token(
     filtered_markets_by_token = _get_markets_by_token_filtered_min_weth_balance(
         all_market_pairs,
     )
-    print(f"filtered markets by token: {len(filtered_markets_by_token)}")
+    logger.info(f"filtered markets by token: {len(filtered_markets_by_token)}")
     return GroupedMarkets(filtered_markets_by_token, all_market_pairs)

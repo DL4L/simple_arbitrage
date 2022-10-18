@@ -1,3 +1,4 @@
+import os
 from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Union
@@ -15,11 +16,14 @@ from simple_arbitrage.markets.types.EthMarket import (
 from simple_arbitrage.utils.abi import UNISWAP_PAIR_ABI
 from simple_arbitrage.utils.addresses import WETH_ADDRESS
 
-w3 = Web3()
+WEB3_INFURA_PROJECT_ID = os.environ.get("WEB3_INFURA_PROJECT_ID")
+provider = Web3.WebsocketProvider(
+    f"wss://mainnet.infura.io/ws/v3/{WEB3_INFURA_PROJECT_ID}",
+)
+w3 = Web3(provider)
 
 
 class UniswappyV2EthPair(EthMarket):
-
     uniswap_interface: Contract = w3.eth.contract(WETH_ADDRESS, abi=UNISWAP_PAIR_ABI)  # type: ignore[call-overload]
 
     def __init__(self, market_address: str, tokens: list[str], protocol: str):
@@ -119,7 +123,7 @@ class UniswappyV2EthPair(EthMarket):
             raise RuntimeError(f"Bad token input address: {token_in}")
 
         populated_transaction = self.uniswap_interface.functions.swap(
-            amount_0_out, amount_1_out, recipient
+            int(amount_0_out), int(amount_1_out), recipient, bytes([])
         ).build_transaction()
 
         if populated_transaction is None or populated_transaction["data"] is None:

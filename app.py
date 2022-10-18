@@ -5,8 +5,9 @@ import time
 
 from flashbots import flashbot
 from web3 import Web3
+from web3._utils.filters import BlockFilter
 
-from simple_arbitrage.arbitrage.arbitrage import Arbitrage
+from simple_arbitrage.arbitrage.arbitrage import Arbitrage, evaluate_markets
 from simple_arbitrage.markets.market_loaders.uniswappy_loader import (
     GroupedMarkets,
     get_uniswap_markets_by_token,
@@ -16,26 +17,21 @@ from simple_arbitrage.utils.abi import BUNDLE_EXECUTOR_ABI
 from simple_arbitrage.utils.addresses import FACTORY_ADDRESSES
 
 logger = logging.getLogger(__name__)
-logger.addHandler(logging.StreamHandler(sys.stdout))
-logger.setLevel(logging.INFO)
-
-ETHEREUM_RPC_URL = os.environ["ETHEREUM_RPC_URL"]
-PRIVATE_KEY = (
-    os.environ.get("PRIVATE_KEY")
-    or "0xb98377c4857cd336787ec5b73e79960dc624354d980c6eacc059fd3dc44f2f38"
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(asctime)s] %(levelname)s %(module)-20s %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
 )
+
+PRIVATE_KEY = os.environ.get("PRIVATE_KEY")
+
 WEB3_INFURA_PROJECT_ID = os.environ.get("WEB3_INFURA_PROJECT_ID")
-BUNDLE_EXECUTOR_ADDRESS = (
-    os.environ.get("BUNDLE_EXECUTOR_ADDRESS")
-    or "0xd9145CCE52D386f254917e481eB44e9943F39138"
-)
+BUNDLE_EXECUTOR_ADDRESS = os.environ.get("BUNDLE_EXECUTOR_ADDRESS")
 
-FLASHBOTS_RELAY_SIGNING_KEY = (
-    os.environ.get("FLASHBOTS_RELAY_SIGNING_KEY")
-    or "0xe8b8ed353a1254f2dbd194344827fe217bd30ea5de2246bcd4702516700987f5"
-)
+FLASHBOTS_RELAY_SIGNING_KEY = os.environ.get("FLASHBOTS_RELAY_SIGNING_KEY")
 
-MINER_REWARD_PERCENTAGE = os.environ.get("MINER_REWARD_PERCENTAGE") or "80"
+
+MINER_REWARD_PERCENTAGE = os.environ.get("MINER_REWARD_PERCENTAGE") or 80
 
 # HEALTHCHECK_URL = process.env.HEALTHCHECK_URL || ""
 
@@ -78,20 +74,23 @@ def main():
         FACTORY_ADDRESSES,
     )
 
-    block_filter = w3.eth.filter("latest")
+    block_filter: BlockFilter = w3.eth.filter("latest")
     while True:
         for event in block_filter.get_new_entries():
             logger.info("NEW Block")
+            block_number = w3.eth.block_number
+            logger.info(f"Block Number: {block_number}")
             logger.info("-" * 100)
             update_reserves(provider, markets.all_market_pairs)
-            best_crossed_markets = arbitrage.evaluate_markets(
+            best_crossed_markets = evaluate_markets(
                 markets.markets_by_token,
             )
             if len(best_crossed_markets) == 0:
                 logger.info("No crossed markets")
-
-            for crossed_market in best_crossed_markets:
-                logger.info(crossed_market)
+            else:
+                arbitrage.take_crossed_markets(
+                    best_crossed_markets, block_number, MINER_REWARD_PERCENTAGE
+                )
         time.sleep(1)
 
 
