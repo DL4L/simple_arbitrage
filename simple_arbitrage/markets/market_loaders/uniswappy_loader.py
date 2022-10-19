@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 # batch count limit helpful for testing, loading entire set of uniswap markets takes a long time to load
 BATCH_COUNT_LIMIT = 100
-UNISWAP_BATCH_SIZE = 100
+UNISWAP_BATCH_SIZE = 1000
 
 # Not necessary, slightly speeds up loading initialization when we know tokens are bad
 # Estimate gas will ensure we aren't submitting bad bundles, but bad tokens waste time

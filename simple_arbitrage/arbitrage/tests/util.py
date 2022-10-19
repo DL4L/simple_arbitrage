@@ -1,13 +1,10 @@
-import os
 import time
 
 from web3 import Web3
 
 from simple_arbitrage.markets.types.EthMarket import EthMarket
 from simple_arbitrage.utils.abi import UNISWAP_ROUTER_ABI
-from simple_arbitrage.utils.addresses import UNISWAP_ROUTER_ADDRESS
-
-WETH_ADDRESS = os.environ.get("WETH_ADDRESS")
+from simple_arbitrage.utils.addresses import UNISWAP_ROUTER_ADDRESS, WETH_ADDRESS
 
 
 def swap_exact_eth_for_tokens(

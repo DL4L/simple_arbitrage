@@ -16,10 +16,9 @@ from simple_arbitrage.markets.types.EthMarket import (
 from simple_arbitrage.utils.abi import UNISWAP_PAIR_ABI
 from simple_arbitrage.utils.addresses import WETH_ADDRESS
 
-WEB3_INFURA_PROJECT_ID = os.environ.get("WEB3_INFURA_PROJECT_ID")
-provider = Web3.WebsocketProvider(
-    f"wss://mainnet.infura.io/ws/v3/{WEB3_INFURA_PROJECT_ID}",
-)
+ETHEREUM_RPC_URL = os.environ.get("ETHEREUM_RPC_URL")
+
+provider = Web3.WebsocketProvider(ETHEREUM_RPC_URL)
 w3 = Web3(provider)
 
 

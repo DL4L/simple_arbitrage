@@ -1,7 +1,6 @@
 import logging
 import os
 import sys
-import time
 
 from flashbots import flashbot
 from web3 import Web3
@@ -25,7 +24,7 @@ logging.basicConfig(
 
 PRIVATE_KEY = os.environ.get("PRIVATE_KEY")
 
-WEB3_INFURA_PROJECT_ID = os.environ.get("WEB3_INFURA_PROJECT_ID")
+ETHEREUM_RPC_URL = os.environ.get("ETHEREUM_RPC_URL")
 BUNDLE_EXECUTOR_ADDRESS = os.environ.get("BUNDLE_EXECUTOR_ADDRESS")
 
 FLASHBOTS_RELAY_SIGNING_KEY = os.environ.get("FLASHBOTS_RELAY_SIGNING_KEY")
@@ -37,9 +36,7 @@ MINER_REWARD_PERCENTAGE = os.environ.get("MINER_REWARD_PERCENTAGE") or 80
 
 USE_GOERLI = False
 
-provider = Web3.WebsocketProvider(
-    f"wss://mainnet.infura.io/ws/v3/{WEB3_INFURA_PROJECT_ID}",
-)
+provider = Web3.WebsocketProvider(ETHEREUM_RPC_URL)
 w3 = Web3(provider)
 
 
@@ -77,21 +74,22 @@ def main():
     block_filter: BlockFilter = w3.eth.filter("latest")
     while True:
         for event in block_filter.get_new_entries():
-            logger.info("NEW Block")
+            logger.info("NEW BLOCK")
             block_number = w3.eth.block_number
             logger.info(f"Block Number: {block_number}")
-            logger.info("-" * 100)
+
             update_reserves(provider, markets.all_market_pairs)
+
             best_crossed_markets = evaluate_markets(
                 markets.markets_by_token,
             )
+
             if len(best_crossed_markets) == 0:
                 logger.info("No crossed markets")
             else:
                 arbitrage.take_crossed_markets(
                     best_crossed_markets, block_number, MINER_REWARD_PERCENTAGE
                 )
-        time.sleep(1)
 
 
 if __name__ == "__main__":

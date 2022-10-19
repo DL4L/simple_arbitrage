@@ -210,17 +210,16 @@ class TestArbitrage(unittest.TestCase):
 
 
 USDC = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-INFURA_PROJECT_ID = os.environ.get("WEB3_INFURA_PROJECT_ID")
+ETHEREUM_RPC_URL = os.environ.get("ETHEREUM_RPC_URL")
 
 
 class TestArbitrageMainnetFork(unittest.TestCase):
     def setUp(self) -> None:
-        os.system("kill -15 $(lsof -ti:8545)")
         self.process = subprocess.Popen(
             [
                 "ganache-cli",
                 "--fork",
-                f"https://mainnet.infura.io/v3/{INFURA_PROJECT_ID}@15737814",
+                f"{ETHEREUM_RPC_URL}@15737814",
                 "--account_keys_path",
                 "simple_arbitrage/arbitrage/tests/keys.json",
                 "--defaultBalanceEther",
@@ -245,7 +244,7 @@ class TestArbitrageMainnetFork(unittest.TestCase):
             list(d["private_keys"].items())[0][0]
         )
         self.private_key: bytes = self.w3.toBytes(
-            text=list(d["private_keys"].items())[0][1]
+            hexstr=list(d["private_keys"].items())[0][1]
         )
 
     def tearDown(self) -> None:

@@ -9,17 +9,16 @@ from simple_arbitrage.markets.types.uniswappy_v2_eth_pair import UniswappyV2EthP
 from simple_arbitrage.utils.addresses import WETH_ADDRESS
 
 USDC = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-INFURA_PROJECT_ID = os.environ.get("WEB3_INFURA_PROJECT_ID")
+ETHEREUM_RPC_URL = os.environ.get("ETHEREUM_RPC_URL")
 
 
 class TestUniswappyPair(unittest.TestCase):
     def setUp(self) -> None:
-        os.system("kill -15 $(lsof -ti:8545)")
         self.process = subprocess.Popen(
             [
                 "ganache-cli",
                 "--fork",
-                f"https://mainnet.infura.io/v3/{INFURA_PROJECT_ID}@15737814",
+                f"{ETHEREUM_RPC_URL}@15737814",
             ],
             stdout=subprocess.PIPE,
         )
