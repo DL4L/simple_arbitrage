@@ -4,6 +4,11 @@ This repository contains a simple, mechanical system for discovering, evaluating
 
 We hope you will use this repository as an example of how to integrate Flashbots into your own Flashbot searcher (bot). For more information, see the [Flashbots Searcher FAQ](https://docs.flashbots.net/flashbots-auction/searchers/faq)
 
+Optimizations
+================
+Currently Optimizes finding the optimal arbitrage input amount over the iterative approach used by flashbots.
+Will add support for token caching
+
 Environment Variables
 =====================
 Create a `.env` file in root directory and populate with following variables
