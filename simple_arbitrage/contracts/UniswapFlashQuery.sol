@@ -53,14 +53,4 @@ contract FlashBotsUniswapQuery {
         return result;
     }
 
-    function getTokenPricesInWeth(address[] calldata _tokens, uint256[] _amountsIn) external view returns (uint256[] memory) {
-
-        uint256[] memory result = new uint256[](_tokens.length);
-
-        for (uint i =0; i < _tokens.length; i++) {
-
-            result[i] = IUniswapV2Router01
-        }
-    }
-
 }
